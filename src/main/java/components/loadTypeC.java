@@ -15,6 +15,14 @@ import java.sql.SQLException;
 import java.util.List;
 
 public class loadTypeC implements LoadTypes {
+    /*
+    Each file has its own loading algorithm.
+    The algorithm is implemented in a way that is flexible, independent, and extensible.
+    Nevertheless, each algorithm has the next common intermediate steps:
+    - A File Validation
+    - A File Parsing
+    - Load into a predefined database
+    **/
 
     private Insertion db = null;
     private ValidationC validation = null;

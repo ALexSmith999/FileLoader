@@ -3,20 +3,26 @@ package components;
 import file.Validations;
 
 public class ValidationC implements Validations {
+    /*
+    Basic technical checks to validate data accuracy.
+    Serves to check whether or not a file can be processed further
+    based on the technical contract.
+    **/
+    private final int expectedNumOfRows = 4;
     @Override
     public boolean isValidRow(String row) {
         if (row.isBlank() || row.isEmpty()) {
             return false;
         }
-
+        row = row.trim();
         String[] arr = row.split(" ");
 
-        if (arr.length < 4) {
+        if (arr.length < expectedNumOfRows) {
             return false;
         }
 
-        for (String curr : arr) {
-            if (curr.isEmpty() || curr.isBlank()) {
+        for (int i = 0; i < expectedNumOfRows; i++) {
+            if (arr[i].isEmpty() || arr[i].isBlank()) {
                 return false;
             }
         }
