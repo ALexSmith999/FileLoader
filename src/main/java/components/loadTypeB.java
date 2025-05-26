@@ -65,9 +65,7 @@ public class loadTypeB implements LoadTypes {
                 conn.commit();
             }
             conn.setAutoCommit(true);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        } catch (SQLException e) {
+        } catch (IOException | SQLException e) {
             throw new RuntimeException(e);
         }
     }

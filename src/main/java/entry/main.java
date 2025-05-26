@@ -14,6 +14,7 @@ import java.util.Properties;
 import static java.nio.file.StandardWatchEventKinds.*;
 
 public class main {
+
     public static Properties customProperties;
     static {
         customProperties = new Properties();
@@ -32,10 +33,10 @@ public class main {
 
         int BATCH_SIZE = Integer.parseInt(customProperties.getProperty(ProjectProperties.BATCH_SIZE.label));
         Path dir = Path.of(customProperties.getProperty(ProjectProperties.FILES_DIRECTORY.label));
-
         WatchService watch = FileSystems.getDefault().newWatchService();
         LoadChain load = new LoadChain();
         java.sql.Connection conn = Connection.returnInstance().connect();
+
         try {
             //WatchKey key = dir.register(watch, ENTRstandardEventsArrayY_CREATE, ExtendedWatchEventModifier.FILE_TREE);
             WatchKey key = dir.register(watch, ENTRY_CREATE);

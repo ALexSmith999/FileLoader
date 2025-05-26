@@ -1,4 +1,4 @@
 1 Steve Jobes NewOrlean
-2 John Smith NewYork
+2 John NewYork
 3 Samantha Fox LasVegas
-4 Chirstina Richy Milan
+4 Chirstina Milan

@@ -4,7 +4,7 @@ import components.loadTypeA;
 import components.loadTypeB;
 import components.loadTypeC;
 
-public class LoadTyoeSelector {
+public class LoadTypeSelector {
     public LoadTypes getLoader(Entities entity) {
         return switch (entity) {
             case TYPEA -> {yield new loadTypeA();}
