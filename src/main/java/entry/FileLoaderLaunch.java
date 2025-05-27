@@ -10,10 +10,12 @@ import java.io.IOException;
 import java.nio.file.*;
 import java.util.Map;
 import java.util.Properties;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import static java.nio.file.StandardWatchEventKinds.*;
 
-public class main {
+public class FileLoaderLaunch {
 
     public static Properties customProperties;
     static {
@@ -21,14 +23,15 @@ public class main {
         try (FileInputStream file =
                      new FileInputStream("src/main/resources/config.properties")) {
             customProperties.load(file);
+            Map<String, String> env = System.getenv();
+            for (var entry : env.entrySet()) {
+                customProperties.putIfAbsent(entry.getKey(), entry.getValue());
+            }
         } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        Map<String, String> env = System.getenv();
-        for (var entry : env.entrySet()) {
-            customProperties.putIfAbsent(entry.getKey(), entry.getValue());
+            throw new RuntimeException("Cannot open the property file or it does not exists", e);
         }
     }
+    private static final Logger logger = LogManager.getLogger(FileLoaderLaunch.class);
     public static void main(String[] args) throws IOException {
 
         int BATCH_SIZE = Integer.parseInt(customProperties.getProperty(ProjectProperties.BATCH_SIZE.label));
@@ -36,13 +39,15 @@ public class main {
         WatchService watch = FileSystems.getDefault().newWatchService();
         LoadChain load = new LoadChain();
         java.sql.Connection conn = Connection.returnInstance().connect();
+        Initializer.showInfo(customProperties);
 
         try {
             //WatchKey key = dir.register(watch, ENTRstandardEventsArrayY_CREATE, ExtendedWatchEventModifier.FILE_TREE);
             WatchKey key = dir.register(watch, ENTRY_CREATE);
         }
         catch (IOException e) {
-            e.printStackTrace();
+            logger.warn("Failed to register the watcher service", e);
+            throw new RuntimeException("Failed to register the watcher service", e);
         }
 
         while (true) {
@@ -57,6 +62,7 @@ public class main {
                     WatchEvent<Path> ev = (WatchEvent<Path>)event;
                     Path filename = ev.context();
                     Path child = dir.resolve(filename);
+                    logger.warn("The file {} is ready to be loaded", filename.toString());
                     load.loadFile(conn, child, BATCH_SIZE);
                 }
                 boolean valid = key.reset();

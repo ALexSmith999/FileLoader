@@ -5,7 +5,7 @@ import entry.ProjectProperties;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 
-import static entry.main.customProperties;
+import static entry.FileLoaderLaunch.customProperties;
 
 public class Connection {
     private static class database {

@@ -2,8 +2,11 @@ package components;
 
 import database.BatchA;
 import database.Insertion;
+import entry.FileLoaderLaunch;
 import file.Entities;
 import file.LoadTypes;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -29,6 +32,7 @@ public class loadTypeA implements LoadTypes {
     private ParserA parser = null;
     private BatchA gatherBatch = null;
     private String query = "";
+    private static final Logger logger = LogManager.getLogger(loadTypeA.class);
 
     public loadTypeA(){
         db = new Insertion();
@@ -48,12 +52,15 @@ public class loadTypeA implements LoadTypes {
             conn.setAutoCommit(false);
             while ((line = buffer.readLine()) != null) {
                 if (!validation.isValidRow(line)) {
+                    logger.warn("The incorrect line number {} in the file {}. Uninterrupted"
+                            , linesCounter + 1, path.toString());
                     continue;
                 }
                 List<List<String>> lines = parser.parse(line);
                 gatherBatch.save(stmnt, lines);
                 if (linesCounter >= batchSize) {
-                    stmnt.executeBatch();
+                    int [] arr = stmnt.executeBatch();
+                    logger.info("The batch consisting of {} rows has been loaded into the database", arr.length);
                     stmnt.clearParameters();
                     conn.commit();
                     linesCounter = 0;
@@ -61,7 +68,8 @@ public class loadTypeA implements LoadTypes {
                 linesCounter++;
             }
             if (linesCounter > 0) {
-                stmnt.executeBatch();
+                int [] arr = stmnt.executeBatch();
+                logger.info("The batch consisting of {} rows has been loaded into the database", arr.length);
                 conn.commit();
             }
             conn.setAutoCommit(true);
