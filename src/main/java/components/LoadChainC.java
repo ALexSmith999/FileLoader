@@ -16,9 +16,8 @@ public class LoadChainC extends RequestHandler {
     public void solveRequest(LoadRequest request) {
         String fileName = request.getPath().getFileName().toString();
         if (fileName.contains("C")) {
-            LoadTypeSelector construct = new LoadTypeSelector();
-            LoadTypes currentFile = construct.getLoader(Entities.TYPEC);
-            currentFile.loadFile(request.getConnection(), request.getPath(), request.getBatchSize());
+            loadTypeC currentFile = new loadTypeC(request);
+            currentFile.loadTheFile();
         }
         else {
             logger.warn("The file {} will be skipped", request.getPath());

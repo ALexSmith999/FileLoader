@@ -3,6 +3,7 @@ package components;
 import database.BatchC;
 import database.Insertion;
 import file.Entities;
+import file.LoadRequest;
 import file.LoadTypes;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -32,49 +33,25 @@ public class loadTypeC implements LoadTypes {
     private BatchC gatherBatch = null;
     private String query = "";
     private static final Logger logger = LogManager.getLogger(loadTypeC.class);
+    private LoadRequest request;
 
-    public loadTypeC(){
+    public loadTypeC(LoadRequest request){
         db = new Insertion();
         validation = new ValidationC();
         parser = new ParserC();
         gatherBatch = new BatchC();
         query = db.returnQuery(Entities.TYPEC);
+        this.request = request;
     }
-
-    @Override
-    public void loadFile(Connection conn, Path path, int batchSize) {
-        try (BufferedReader buffer = new BufferedReader(new FileReader(path.toFile()));
-             PreparedStatement stmnt = conn.prepareStatement(query)
-        ) {
-            String line;
-            int linesCounter = 0;
-            conn.setAutoCommit(false);
-            while ((line = buffer.readLine()) != null) {
-                if (!validation.isValidRow(line)) {
-                    logger.warn("The incorrect line number {} in the file {}. Uninterrupted"
-                            , linesCounter + 1, path.toString());
-                    continue;
-                }
-                List<List<String>> lines = parser.parse(line);
-                gatherBatch.save(stmnt, lines);
-                if (linesCounter >= batchSize) {
-                    int [] arr = stmnt.executeBatch();
-                    logger.info("The batch consisting of {} rows has been loaded into the database", arr.length);
-                    stmnt.clearParameters();
-                    conn.commit();
-                    linesCounter = 0;
-                }
-                linesCounter++;
-            }
-            if (linesCounter > 0) {
-                int [] arr = stmnt.executeBatch();
-                logger.info("The batch consisting of {} rows has been loaded into the database", arr.length);
-                conn.commit();
-            }
-            conn.setAutoCommit(true);
-        } catch (IOException | SQLException e) {
-            throw new RuntimeException(e);
-        }
+    public void loadTheFile (){
+        loadFile(request.getConnection()
+                , request.getPath()
+                , request.getBatchSize()
+                , query
+                , validation
+                , parser
+                , gatherBatch
+        );
     }
 }
 

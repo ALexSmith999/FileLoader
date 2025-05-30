@@ -13,9 +13,8 @@ public class LoadChainB extends RequestHandler {
     public void solveRequest(LoadRequest request) {
         String fileName = request.getPath().getFileName().toString();
         if (fileName.contains("B")) {
-            LoadTypeSelector construct = new LoadTypeSelector();
-            LoadTypes currentFile = construct.getLoader(Entities.TYPEB);
-            currentFile.loadFile(request.getConnection(), request.getPath(), request.getBatchSize());
+            loadTypeB currentFile = new loadTypeB(request);
+            currentFile.loadTheFile();
         }
         else {
             RequestHandler next = new LoadChainC();
