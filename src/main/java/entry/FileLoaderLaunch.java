@@ -1,13 +1,11 @@
-
-
 package entry;
-
 import database.Connection;
 import file.LoadChain;
 
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.*;
+import java.sql.SQLException;
 import java.util.Map;
 import java.util.Properties;
 import org.apache.logging.log4j.LogManager;
@@ -17,62 +15,82 @@ import static java.nio.file.StandardWatchEventKinds.*;
 
 public class FileLoaderLaunch {
 
-    public static Properties customProperties;
+    public static Properties customProperties = new Properties();
     static {
-        customProperties = new Properties();
-        try (FileInputStream file =
-                     new FileInputStream("src/main/resources/config.properties")) {
+        try (var file = new java.io.FileInputStream("src/main/resources/config.properties")) {
             customProperties.load(file);
-            Map<String, String> env = System.getenv();
-            for (var entry : env.entrySet()) {
-                customProperties.putIfAbsent(entry.getKey(), entry.getValue());
-            }
         } catch (IOException e) {
-            throw new RuntimeException("Cannot open the property file or it does not exists", e);
+            throw new RuntimeException("Cannot open the property file or it does not exist", e);
         }
     }
     private static final Logger logger = LogManager.getLogger(FileLoaderLaunch.class);
     public static void main(String[] args) throws IOException {
-
-        int BATCH_SIZE = Integer.parseInt(customProperties.getProperty(ProjectProperties.BATCH_SIZE.label));
-        Path dir = Path.of(customProperties.getProperty(ProjectProperties.FILES_DIRECTORY.label));
-        WatchService watch = FileSystems.getDefault().newWatchService();
-        LoadChain load = new LoadChain();
-        java.sql.Connection conn = Connection.returnInstance().connect();
-        Initializer.showInfo(customProperties);
-
+        /*
+        TO DO : add pools to divide the execution process into separate steps
+        that can be executed concurrently : validation - parse - load
+        after getting a file complete two commands that inherit the callable interface
+        whereas the database load depends on the successful completion of previous two
+        **/
+        int batchSize;
+        Path dir;
         try {
-            //WatchKey key = dir.register(watch, ENTRstandardEventsArrayY_CREATE, ExtendedWatchEventModifier.FILE_TREE);
-            WatchKey key = dir.register(watch, ENTRY_CREATE);
-        }
-        catch (IOException e) {
-            logger.warn("Failed to register the watcher service", e);
-            throw new RuntimeException("Failed to register the watcher service", e);
+            batchSize = Integer.parseInt(customProperties.getProperty(ProjectProperties.BATCH_SIZE.label));
+            dir = Path.of(customProperties.getProperty(ProjectProperties.FILES_DIRECTORY.label));
+        } catch (Exception e) {
+            logger.error("Failed to load configuration properties", e);
+            return;
         }
 
-        while (true) {
-            WatchKey key;
-            try {
-                key = watch.take();
-                for (WatchEvent<?> event: key.pollEvents()) {
-                    WatchEvent.Kind<?> kind = event.kind();
-                    if (kind == OVERFLOW) {
-                        continue;
+        try (WatchService watch = FileSystems.getDefault().newWatchService();
+             var conn = Connection.returnInstance().connect()) {
+
+            LoadChain load = new LoadChain();
+            Initializer.start(customProperties);
+
+            dir.register(watch, ENTRY_CREATE);
+
+            logger.info("Type 'exit' and press Enter to stop the program.");
+
+            java.io.BufferedReader reader = new java.io.BufferedReader(new java.io.InputStreamReader(System.in));
+            boolean keepRunning = true;
+
+            while (keepRunning) {
+                // Poll watch service with timeout (e.g., 500ms)
+                WatchKey key = watch.poll(500, java.util.concurrent.TimeUnit.MILLISECONDS);
+
+                if (key != null) {
+                    for (WatchEvent<?> event : key.pollEvents()) {
+                        if (event.kind() == OVERFLOW) continue;
+
+                        WatchEvent<Path> ev = (WatchEvent<Path>) event;
+                        Path filename = ev.context();
+                        Path filePath = dir.resolve(filename);
+
+                        logger.info("The file {} is ready to be loaded", filename);
+                        load.loadFile(conn, filePath, batchSize);
                     }
-                    WatchEvent<Path> ev = (WatchEvent<Path>)event;
-                    Path filename = ev.context();
-                    Path child = dir.resolve(filename);
-                    logger.warn("The file {} is ready to be loaded", filename.toString());
-                    load.loadFile(conn, child, BATCH_SIZE);
+
+                    if (!key.reset()) {
+                        logger.warn("WatchKey no longer valid, stopping watcher");
+                        break;
+                    }
                 }
-                boolean valid = key.reset();
-                if (!valid) {
-                    break;
+
+                // Check if user input is available (non-blocking)
+                if (reader.ready()) {
+                    String line = reader.readLine();
+                    if (line != null && line.trim().equalsIgnoreCase("exit")) {
+                        logger.info("Exit command received, stopping...");
+                        keepRunning = false;
+                    }
                 }
             }
-            catch (InterruptedException e) {
-                e.printStackTrace();
-            }
+
+        } catch (IOException | InterruptedException | SQLException e) {
+            logger.error("Error in watcher service or database connection", e);
+            Thread.currentThread().interrupt();
         }
+
+        Initializer.stop(customProperties);
     }
 }

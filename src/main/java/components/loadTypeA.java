@@ -1,22 +1,9 @@
 package components;
 
 import database.BatchA;
-import database.Insertion;
-import entry.FileLoaderLaunch;
-import file.Entities;
+import database.DatabaseStatementsTypeA;
 import file.LoadRequest;
 import file.LoadTypes;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
-import java.nio.file.Path;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
-import java.util.List;
 
 public class loadTypeA implements LoadTypes {
     /*
@@ -27,31 +14,64 @@ public class loadTypeA implements LoadTypes {
     - A File Parsing
     - Load into a predefined database
     **/
-    private Insertion db = null;
-    private ValidationA validation = null;
-    private ParserA parser = null;
-    private BatchA gatherBatch = null;
-    private String query = "";
-    private LoadRequest request;
-    // TO DO : it is required to implement Builder pattern.
-    // Must to make the construction of objects transparent and evident in Load Chains
-    // SOLID : use dependency ejections instead of instantiating objects inside a particular one
-    public loadTypeA(LoadRequest request){
-        db = new Insertion();
-        validation = new ValidationA();
-        parser = new ParserA();
-        gatherBatch = new BatchA();
-        query = db.returnQuery(Entities.TYPEA);
-        this.request = request;
+    private final DatabaseStatementsTypeA db;
+    private final ValidationA validation;
+    private final ParserA parser;
+    private final BatchA batch;
+    private final LoadRequest request;
+
+    public loadTypeA(Builder builder){
+        this.db = builder.db;
+        this.validation = builder.validation;
+        this.parser = builder.parser;
+        this.batch = builder.batch;
+        this.request = builder.request;
     }
-    public void loadTheFile (){
+
+    public static class Builder {
+
+        private DatabaseStatementsTypeA db;
+        private ValidationA validation;
+        private ParserA parser;
+        private BatchA batch;
+        private LoadRequest request;
+
+        public Builder withDatabase(DatabaseStatementsTypeA db){
+            this.db = db;
+            return this;
+        }
+        public Builder withValidation(ValidationA validation){
+            this.validation = validation;
+            return this;
+        }
+        public Builder withParser(ParserA parser){
+            this.parser = parser;
+            return this;
+        }
+        public Builder withBatch(BatchA batch){
+            this.batch = batch;
+            return this;
+        }
+        public Builder withRequest(LoadRequest request){
+            this.request = request;
+            return this;
+        }
+        public loadTypeA Build(){
+            if (db == null || validation == null
+                    || parser == null || batch == null || request == null) {
+                throw new IllegalStateException("All Dependencies must be provided");
+            }
+            return new loadTypeA(this);
+        }
+    }
+    public void fulfillRequest (){
         loadFile(request.getConnection()
                 , request.getPath()
                 , request.getBatchSize()
-                , query
+                , db.returnBaseInsert()
                 , validation
                 , parser
-                , gatherBatch
+                , batch
         );
     }
 }

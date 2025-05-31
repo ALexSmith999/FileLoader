@@ -6,6 +6,7 @@ target/
 /out/
 /.idea/
 SECRET*
+/src/main/resources/*.properties
 
 ### IntelliJ IDEA ###
 .idea/modules.xml
