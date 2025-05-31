@@ -1,5 +1,7 @@
 package components;
 
+import database.BatchA;
+import database.DatabaseStatementsTypeA;
 import file.*;
 
 public class LoadChainA extends RequestHandler {
@@ -13,8 +15,14 @@ public class LoadChainA extends RequestHandler {
     public void solveRequest(LoadRequest request) {
         String fileName = request.getPath().getFileName().toString();
         if (fileName.contains("A")) {
-            loadTypeA currentFile = new loadTypeA(request);
-            currentFile.loadTheFile();
+            loadTypeA currentFile = new loadTypeA.Builder()
+                    .withDatabase(new DatabaseStatementsTypeA())
+                    .withValidation(new ValidationA())
+                    .withParser(new ParserA())
+                    .withBatch(new BatchA())
+                    .withRequest(request)
+                    .Build();
+            currentFile.fulfillRequest();
         }
         else {
             RequestHandler next = new LoadChainB();

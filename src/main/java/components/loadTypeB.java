@@ -1,21 +1,11 @@
 package components;
 
 import database.BatchB;
-import database.Insertion;
-import file.Entities;
+import database.DatabaseStatementsTypeB;
 import file.LoadRequest;
 import file.LoadTypes;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
-import java.nio.file.Path;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
-import java.util.List;
+import java.awt.geom.IllegalPathStateException;
 
 public class loadTypeB implements LoadTypes {
     /*
@@ -27,30 +17,65 @@ public class loadTypeB implements LoadTypes {
     - Load into a predefined database
     **/
 
-    private Insertion db = null;
-    private ValidationB validation = null;
-    private ParserB parser = null;
-    private BatchB gatherBatch = null;
-    private String query = "";
-    private static final Logger logger = LogManager.getLogger(loadTypeB.class);
-    private LoadRequest request;
+    private final DatabaseStatementsTypeB db;
+    private final ValidationB validation;
+    private final ParserB parser;
+    private final BatchB batch;
+    private final LoadRequest request;
 
-    public loadTypeB(LoadRequest request){
-        db = new Insertion();
-        validation = new ValidationB();
-        parser = new ParserB();
-        gatherBatch = new BatchB();
-        query = db.returnQuery(Entities.TYPEB);
-        this.request = request;
+    public loadTypeB(Builder builder){
+        this.db = builder.db;
+        validation = builder.validation;
+        parser = builder.parser;
+        batch = builder.batch;
+        this.request = builder.request;
     }
-    public void loadTheFile (){
+
+    public static class Builder{
+        private DatabaseStatementsTypeB db;
+        private ValidationB validation;
+        private ParserB parser;
+        private BatchB batch;
+        private LoadRequest request;
+
+        public Builder withDatabase (DatabaseStatementsTypeB db){
+            this.db = db;
+            return this;
+        }
+        public Builder withValidation (ValidationB validation){
+            this.validation = validation;
+            return this;
+        }
+        public Builder withParser (ParserB parser){
+            this.parser = parser;
+            return this;
+        }
+        public Builder withBatch (BatchB batch){
+            this.batch = batch;
+            return this;
+        }
+
+        public Builder withRequest(LoadRequest request) {
+            this.request = request;
+            return this;
+        }
+        public loadTypeB Build(){
+            if (db == null || validation == null || parser == null
+                    || batch == null || request == null) {
+                throw new IllegalPathStateException("All Dependencies must be provided");
+            }
+            return new loadTypeB(this);
+        }
+    }
+
+    public void fulfillRequest (){
         loadFile(request.getConnection()
                 , request.getPath()
                 , request.getBatchSize()
-                , query
+                , db.returnBaseInsert()
                 , validation
                 , parser
-                , gatherBatch
+                , batch
         );
     }
 }

@@ -1,5 +1,4 @@
-import database.Insertion;
-import file.Entities;
+import database.DatabaseStatementsTypeB;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -15,14 +14,14 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class BatchBTests {
-    Insertion ins;
+    DatabaseStatementsTypeB ins;
     @BeforeAll
     static void setup() throws SQLException {
         H2databasePlug.initializeDatabase();
     }
     @BeforeEach
     void setUop(){
-        ins = new Insertion();
+        ins = new DatabaseStatementsTypeB();
         try (Connection conn = H2databasePlug.getConnection();){
             PreparedStatement stmnt = conn.prepareStatement("truncate table typeB");
             stmnt.execute();
@@ -33,7 +32,7 @@ public class BatchBTests {
     @Test
     void assertBatchBisGathered() {
         List<List<String>> arr = new ArrayList<>();
-        String query = ins.returnQuery(Entities.TYPEB);
+        String query = ins.returnBaseInsert();
 
         String row = "1 11/05/2024 100 2355 224";
         String row1 = "2 12/03/2024 110 255 2240";

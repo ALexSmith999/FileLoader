@@ -33,7 +33,12 @@ public class FileLoaderLaunch {
     }
     private static final Logger logger = LogManager.getLogger(FileLoaderLaunch.class);
     public static void main(String[] args) throws IOException {
-
+        /*
+        TO DO : add pools to divide the execution process into separate steps
+        that can be executed concurrently : validation - parse - load
+        after getting a file complete two commands that inherit the callable interface
+        whereas the database load depends on the successful completion of previous two
+        **/
         int BATCH_SIZE = Integer.parseInt(customProperties.getProperty(ProjectProperties.BATCH_SIZE.label));
         Path dir = Path.of(customProperties.getProperty(ProjectProperties.FILES_DIRECTORY.label));
         WatchService watch = FileSystems.getDefault().newWatchService();

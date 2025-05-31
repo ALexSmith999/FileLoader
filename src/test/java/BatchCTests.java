@@ -1,5 +1,4 @@
-import database.Insertion;
-import file.Entities;
+import database.DatabaseStatementsTypeC;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -15,14 +14,14 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class BatchCTests {
-    Insertion ins;
+    DatabaseStatementsTypeC ins;
     @BeforeAll
     static void setup() throws SQLException {
         H2databasePlug.initializeDatabase();
     }
     @BeforeEach
     void setUop(){
-        ins = new Insertion();
+        ins = new DatabaseStatementsTypeC();
         try (Connection conn = H2databasePlug.getConnection();){
             PreparedStatement stmnt = conn.prepareStatement("truncate table typeC");
             stmnt.execute();
@@ -33,7 +32,7 @@ public class BatchCTests {
     @Test
     void assertBatchBisGathered() {
         List<List<String>> arr = new ArrayList<>();
-        String query = ins.returnQuery(Entities.TYPEC);
+        String query = ins.returnBaseInsert();
 
         String row = "1 Steve Jobes NewOrlean";
         String row1 = "2 John Smith NewYork";

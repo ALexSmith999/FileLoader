@@ -1,5 +1,7 @@
 package components;
 
+import database.BatchC;
+import database.DatabaseStatementsTypeC;
 import file.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -16,8 +18,14 @@ public class LoadChainC extends RequestHandler {
     public void solveRequest(LoadRequest request) {
         String fileName = request.getPath().getFileName().toString();
         if (fileName.contains("C")) {
-            loadTypeC currentFile = new loadTypeC(request);
-            currentFile.loadTheFile();
+            loadTypeC currentFile = new loadTypeC.Builder()
+                    .withDatabase(new DatabaseStatementsTypeC())
+                    .withValidation(new ValidationC())
+                    .withParser(new ParserC())
+                    .withBatch(new BatchC())
+                    .withRequest(request)
+                    .Build();
+            currentFile.fulfillRequest();
         }
         else {
             logger.warn("The file {} will be skipped", request.getPath());

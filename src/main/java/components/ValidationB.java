@@ -8,7 +8,7 @@ public class ValidationB implements Validations {
     Serves to check whether or not a file can be processed further
     based on the technical contract.
     **/
-    private final int expectedNumOfRows = 5;
+    private final int EXPECTED_NUM_OF_ROWS = 5;
     @Override
     public boolean isValidRow(String row) {
         if (row.isBlank() || row.isEmpty()) {
@@ -17,11 +17,11 @@ public class ValidationB implements Validations {
         row = row.trim();
         String[] arr = row.split(" ");
 
-        if (arr.length < expectedNumOfRows) {
+        if (arr.length < EXPECTED_NUM_OF_ROWS) {
             return false;
         }
 
-        for (int i = 0; i < expectedNumOfRows; i++) {
+        for (int i = 0; i < EXPECTED_NUM_OF_ROWS; i++) {
             if (arr[i].isEmpty() || arr[i].isBlank()) {
                 return false;
             }

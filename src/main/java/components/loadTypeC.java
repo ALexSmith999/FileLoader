@@ -1,21 +1,9 @@
 package components;
 
 import database.BatchC;
-import database.Insertion;
-import file.Entities;
+import database.DatabaseStatementsTypeC;
 import file.LoadRequest;
 import file.LoadTypes;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
-import java.nio.file.Path;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
-import java.util.List;
 
 public class loadTypeC implements LoadTypes {
     /*
@@ -27,30 +15,63 @@ public class loadTypeC implements LoadTypes {
     - Load into a predefined database
     **/
 
-    private Insertion db = null;
-    private ValidationC validation = null;
-    private ParserC parser = null;
-    private BatchC gatherBatch = null;
-    private String query = "";
-    private static final Logger logger = LogManager.getLogger(loadTypeC.class);
-    private LoadRequest request;
+    private final DatabaseStatementsTypeC db;
+    private final ValidationC validation;
+    private final ParserC parser;
+    private final BatchC batch;
+    private final LoadRequest request;
 
-    public loadTypeC(LoadRequest request){
-        db = new Insertion();
-        validation = new ValidationC();
-        parser = new ParserC();
-        gatherBatch = new BatchC();
-        query = db.returnQuery(Entities.TYPEC);
-        this.request = request;
+    public loadTypeC(Builder builder){
+        this.db = builder.db;
+        this.validation = builder.validation;
+        this.parser = builder.parser;
+        this.batch = builder.batch;
+        this.request = builder.request;
     }
-    public void loadTheFile (){
+    public static class Builder{
+
+        private DatabaseStatementsTypeC db;
+        private ValidationC validation;
+        private ParserC parser;
+        private BatchC batch;
+        private LoadRequest request;
+
+        public Builder withDatabase(DatabaseStatementsTypeC db) {
+            this.db = db;
+            return this;
+        }
+        public Builder withValidation(ValidationC validation) {
+            this.validation = validation;
+            return this;
+        }
+        public Builder withParser(ParserC parser) {
+            this.parser = parser;
+            return this;
+        }
+        public Builder withBatch(BatchC batch) {
+            this.batch = batch;
+            return this;
+        }
+        public Builder withRequest(LoadRequest request) {
+            this.request = request;
+            return this;
+        }
+        public loadTypeC Build (){
+            if (db == null || validation == null
+                    || parser == null || batch == null || request == null) {
+                throw new IllegalStateException("All dependencies should provided");
+            }
+            return new loadTypeC(this);
+        }
+    }
+    public void fulfillRequest (){
         loadFile(request.getConnection()
                 , request.getPath()
                 , request.getBatchSize()
-                , query
+                , db.returnBaseInsert()
                 , validation
                 , parser
-                , gatherBatch
+                , batch
         );
     }
 }

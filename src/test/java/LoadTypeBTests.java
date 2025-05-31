@@ -1,5 +1,9 @@
+import components.ParserB;
+import components.ValidationB;
 import components.loadTypeA;
 import components.loadTypeB;
+import database.BatchB;
+import database.DatabaseStatementsTypeB;
 import file.LoadRequest;
 import file.LoadTypes;
 import org.junit.jupiter.api.BeforeAll;
@@ -76,8 +80,15 @@ public class LoadTypeBTests {
     void LoadTypeBSucceedstest () throws SQLException {
         try (Connection conn = H2databasePlug.getConnection();
         ) {
-            loadTypeB load = new loadTypeB(new LoadRequest(conn, Path.of(CORRECT_FILE), BATCH_SIZE));
-            load.loadTheFile();
+            LoadRequest request = new LoadRequest(conn, Path.of(CORRECT_FILE), BATCH_SIZE);;
+            loadTypeB currentFile = new loadTypeB.Builder()
+                    .withDatabase(new DatabaseStatementsTypeB())
+                    .withValidation(new ValidationB())
+                    .withParser(new ParserB())
+                    .withBatch(new BatchB())
+                    .withRequest(request)
+                    .Build();
+            currentFile.fulfillRequest();
             assertLoadsIntoDBforTypeB();
         } catch (SQLException e) {
             throw new SQLException(e);
@@ -87,8 +98,15 @@ public class LoadTypeBTests {
     @Test
     void LoadTypeFailsBtest() throws SQLException {
         try (Connection conn = H2databasePlug.getConnection()) {
-            loadTypeB load = new loadTypeB(new LoadRequest(conn, Path.of(INCORRECT_FILE), BATCH_SIZE));
-            load.loadTheFile();
+            LoadRequest request = new LoadRequest(conn, Path.of(INCORRECT_FILE), BATCH_SIZE);;
+            loadTypeB currentFile = new loadTypeB.Builder()
+                    .withDatabase(new DatabaseStatementsTypeB())
+                    .withValidation(new ValidationB())
+                    .withParser(new ParserB())
+                    .withBatch(new BatchB())
+                    .withRequest(request)
+                    .Build();
+            currentFile.fulfillRequest();
             try (PreparedStatement stmnt = conn.prepareStatement("SELECT COUNT(*) AS total FROM typeB");
                  ResultSet rs = stmnt.executeQuery()
             ) {
@@ -102,8 +120,16 @@ public class LoadTypeBTests {
     @Test
     void LoadTypeBPartiallyLoadstest() throws SQLException {
         try (Connection conn = H2databasePlug.getConnection()) {
-            loadTypeB load = new loadTypeB(new LoadRequest(conn, Path.of(PARTIAL_FILE), BATCH_SIZE));
-            load.loadTheFile();
+
+            LoadRequest request = new LoadRequest(conn, Path.of(PARTIAL_FILE), BATCH_SIZE);;
+            loadTypeB currentFile = new loadTypeB.Builder()
+                    .withDatabase(new DatabaseStatementsTypeB())
+                    .withValidation(new ValidationB())
+                    .withParser(new ParserB())
+                    .withBatch(new BatchB())
+                    .withRequest(request)
+                    .Build();
+            currentFile.fulfillRequest();
 
             try (PreparedStatement stmnt = conn.prepareStatement("SELECT COUNT(*) AS total FROM typeB");
                  ResultSet rs = stmnt.executeQuery()
